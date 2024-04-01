@@ -4,6 +4,10 @@ import sqlite3
 from tkinter import *
 from tkinter import ttk
 
+# Conexão ao banco de dados
+connector = sqlite3.connect('agiliza.db')
+cursor = connector.cursor()
+
 def cadastrarFornecedor():
     #Criando uma nova janela para cadastrar o fornecedor no Banco de dados
     janela_cadastrar_fornecedor = Toplevel(janela_principal)
@@ -13,8 +17,8 @@ def cadastrarFornecedor():
     janela_cadastrar_fornecedor.configure(bg="#FFFFFF")
 
    # Definindo largura e altura da janela. (Esses valores são fixos definidos por mim) 
-    largura_janela = 450
-    altura_janela = 300
+    largura_janela = 420
+    altura_janela = 315
 
     # Pegando altura e largura da tela do computador (Aqui é dinamico, depende do PC) 
     largura_tela = janela_cadastrar_fornecedor.winfo_screenwidth()
@@ -43,16 +47,43 @@ def cadastrarFornecedor():
     cnpj_empresa_cadastrar.grid(row=1,column=1,padx=10,pady=10)
 
 
+    Label(janela_cadastrar_fornecedor, text="Contatos", font=("Arial, 12"),bg="#FFFFFF").grid(row=2,column=0,padx=20,pady=10,sticky="W")# sticky preenche as laterais NSEW( Norte, Sul, Leste e Oeste)
+    contatos_empresa_cadastrar = Entry(janela_cadastrar_fornecedor, font=("Arial, 12"), **estilo_borda)
+    contatos_empresa_cadastrar.grid(row=2,column=1,padx=10,pady=10)
+
+
     # Campo para inserir os produtos que aquela empresa vende
-    Label(janela_cadastrar_fornecedor, text="Produtos", font=("Arial, 12"),bg="#FFFFFF").grid(row=2,column=0,padx=20,pady=10,sticky="W")# sticky preenche as laterais NSEW( Norte, Sul, Leste e Oeste)
+    Label(janela_cadastrar_fornecedor, text="Produtos", font=("Arial, 12"),bg="#FFFFFF").grid(row=3,column=0,padx=20,pady=10,sticky="W")# sticky preenche as laterais NSEW( Norte, Sul, Leste e Oeste)
     produtos_empresa_cadastrar = Entry(janela_cadastrar_fornecedor, font=("Arial, 12"), **estilo_borda)
-    produtos_empresa_cadastrar.grid(row=2,column=1,padx=10,pady=10)
+    produtos_empresa_cadastrar.grid(row=3,column=1,padx=10,pady=10)
 
 
     # Campo de descrição da empresa ou observações. OPCIONAL 
-    Label(janela_cadastrar_fornecedor, text="Descrição da Empresa", font=("Arial, 12"),bg="#FFFFFF").grid(row=3,column=0,padx=20,pady=10,sticky="W")# sticky preenche as laterais NSEW( Norte, Sul, Leste e Oeste)
+    Label(janela_cadastrar_fornecedor, text="Descrição da Empresa", font=("Arial, 12"),bg="#FFFFFF").grid(row=4,column=0,padx=20,pady=10,sticky="W")# sticky preenche as laterais NSEW( Norte, Sul, Leste e Oeste)
     descricao_empresa_cadastrar = Entry(janela_cadastrar_fornecedor, font=("Arial, 12"), **estilo_borda)
-    descricao_empresa_cadastrar.grid(row=3,column=1,padx=10,pady=10)
+    descricao_empresa_cadastrar.grid(row=4,column=1,padx=10,pady=10)
+
+    # Função para pegar os dados vindos dos inputs e salvar no nosso BD
+    def salvar_dados():
+        
+        novo_fornecedor_cadastrar = (nome_empresa_cadastrar.get(),cnpj_empresa_cadastrar.get(),contatos_empresa_cadastrar.get(),produtos_empresa_cadastrar.get(),descricao_empresa_cadastrar.get())
+
+
+        cursor.execute("INSERT INTO fornecedores(NomeEmpresa,Cnpj,Contatos,Produtos,Descricao)Values(?,?,?,?,?)", novo_fornecedor_cadastrar)
+        connector.commit()
+
+        print("Fornecedor cadastrado com sucesso !!!")
+        
+        #Fecha a janela de cadastro depois de finalizado.
+        janela_cadastrar_fornecedor.destroy()
+
+
+
+    botao_salvar_dados = Button(janela_cadastrar_fornecedor, text="Salvar", font=("Arial", 12), command=salvar_dados)
+    botao_salvar_dados.grid(row=5,column=0,columnspan=2,padx=10,pady=10,sticky="NSEW")
+
+    botao_cancelar = Button(janela_cadastrar_fornecedor, text="Cancelar", font=("Arial", 12), command=janela_cadastrar_fornecedor.destroy)
+    botao_cancelar.grid(row=6,column=0,columnspan=2,padx=10,pady=5,sticky="NSEW")
 
 
 janela_principal = Tk()
@@ -79,3 +110,7 @@ menu_principal.add_command(label="Sair", command=janela_principal.destroy)
 
 
 janela_principal.mainloop()
+
+#Fechar o cursor e conexão
+cursor.close()
+connector.close()
