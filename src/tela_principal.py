@@ -1,6 +1,7 @@
 import sqlite3 
 from tkinter import *
 from tkinter import ttk
+from tkinter import messagebox
 
 # Conexão ao banco de dados
 connector = sqlite3.connect('agiliza.db')
@@ -20,8 +21,8 @@ def listar_dados():
         # Aqui estamos populando os dados linha por linha 
         treeview.insert("", "end", values=(valor[1], valor[2], valor[3], valor[4]))
 
-def buscar_fornecedor():
-    nome = nome_empresa.get()
+def buscar_fornecedor(*args):
+    nome = nome_empresa_var.get()
     cursor.execute("SELECT * FROM fornecedores WHERE NomeEmpresa LIKE ?", ('%' + nome + '%',))
     resultados = cursor.fetchall()
     
@@ -31,8 +32,54 @@ def buscar_fornecedor():
     for resultado in resultados:
         treeview.insert("", "end", values=(resultado[1], resultado[2], resultado[3], resultado[4]))
 
+def formatar_contato(event):
+    global contatos_empresa_cadastrar
+    s = contatos_empresa_cadastrar.get()
+    
+    # Remover todos os caracteres que não sejam dígitos
+    digits = ''.join(filter(str.isdigit, s))
+    
+    # Formatar o número de telefone
+    formatted = ""
+    if len(digits) > 0:
+        formatted = "(" + digits[0:2] + ") "
+        if len(digits) > 2:
+            formatted += digits[2] + " "
+            if len(digits) > 3:
+                formatted += digits[3:7] + digits[7:11]
+    
+    # Atualizar o conteúdo do campo de entrada com a versão formatada
+    contatos_empresa_cadastrar.delete(0, END)
+    contatos_empresa_cadastrar.insert(0, formatted)
+
+def formatar_cnpj(event):
+    global cnpj_empresa_cadastrar
+    s = cnpj_empresa_cadastrar.get()
+    
+    # Remover todos os caracteres que não sejam dígitos
+    digits = ''.join(filter(str.isdigit, s))
+    
+    # Formatar o CNPJ
+    formatted = ""
+    if len(digits) > 0:
+        formatted = digits[0:2] + "."
+        if len(digits) > 2:
+            formatted += digits[2:5] + "."
+            if len(digits) > 5:
+                formatted += digits[5:8] + "/"
+                if len(digits) > 8:
+                    formatted += digits[8:12] + "-"
+                    if len(digits) > 12:
+                        formatted += digits[12:14]
+    
+    # Atualizar o conteúdo do campo de entrada com a versão formatada
+    cnpj_empresa_cadastrar.delete(0, END)
+    cnpj_empresa_cadastrar.insert(0, formatted)
+
+
+
 janela_principal = Tk()
-janela_principal.title("Janela principal")
+janela_principal.title("Agiliza Software")
 
 # Obtendo as dimensões da tela do computador
 largura_tela = janela_principal.winfo_screenwidth()
@@ -57,11 +104,15 @@ Label(janela_principal,text="Lista de Fornecedores", font="Arial 20").grid(row=0
 
 #Texto e input para buscar fornecedores pelo nome
 Label(janela_principal,text="Buscar Fornecedor por nome", font="Arial 10").grid(row=1, column=0, columnspan=2, padx=10, pady=10)
-nome_empresa = Entry(janela_principal, font="Arial 10")
+nome_empresa_var = StringVar()
+nome_empresa = Entry(janela_principal, font="Arial 10", textvariable=nome_empresa_var)
 nome_empresa.grid(row=1, column=1, columnspan=2, padx=10, pady=10)
 
 btn_buscar = Button(janela_principal, text="Buscar", command=buscar_fornecedor)
 btn_buscar.grid(row=1, column=2, padx=10, pady=10)
+
+# Adiciona rastreamento à variável de controle para chamar buscar_fornecedor a cada alteração
+nome_empresa_var.trace("w", buscar_fornecedor)
 
 def cadastrarFornecedor():
     #Criando uma nova janela para cadastrar o fornecedor no Banco de dados
@@ -87,23 +138,28 @@ def cadastrarFornecedor():
     
     # Campo para inserir o Nome da empresa
     Label(janela_cadastrar_fornecedor, text="Nome da Empresa", font=("Arial, 12"),bg="#FFFFFF").grid(row=0,column=0,padx=20,pady=10,sticky="W")# sticky preenche as laterais NSEW( Norte, Sul, Leste e Oeste)
+    global nome_empresa_cadastrar
     nome_empresa_cadastrar = Entry(janela_cadastrar_fornecedor, font=("Arial, 12"), **estilo_borda)
     nome_empresa_cadastrar.grid(row=0,column=1,padx=10,pady=10)
 
 
     # Campo de CNPJ da empresa. OPCIONAL 
     Label(janela_cadastrar_fornecedor, text="CNPJ", font=("Arial, 12"),bg="#FFFFFF").grid(row=1,column=0,padx=20,pady=10,sticky="W")# sticky preenche as laterais NSEW( Norte, Sul, Leste e Oeste)
+    global cnpj_empresa_cadastrar
     cnpj_empresa_cadastrar = Entry(janela_cadastrar_fornecedor, font=("Arial, 12"), **estilo_borda)
     cnpj_empresa_cadastrar.grid(row=1,column=1,padx=10,pady=10)
-
+    cnpj_empresa_cadastrar.bind('<KeyRelease>', formatar_cnpj)
 
     Label(janela_cadastrar_fornecedor, text="Contatos", font=("Arial, 12"),bg="#FFFFFF").grid(row=2,column=0,padx=20,pady=10,sticky="W")# sticky preenche as laterais NSEW( Norte, Sul, Leste e Oeste)
+    global contatos_empresa_cadastrar
     contatos_empresa_cadastrar = Entry(janela_cadastrar_fornecedor, font=("Arial, 12"), **estilo_borda)
     contatos_empresa_cadastrar.grid(row=2,column=1,padx=10,pady=10)
-
+    contatos_empresa_cadastrar.bind('<KeyRelease>', formatar_contato)
+    contatos_empresa_cadastrar.config(validate="key", validatecommand=(janela_cadastrar_fornecedor.register(lambda x: len(x) <= 15), '%P'))
 
     # Campo para inserir os produtos que aquela empresa vende
     Label(janela_cadastrar_fornecedor, text="Produtos", font=("Arial, 12"),bg="#FFFFFF").grid(row=3,column=0,padx=20,pady=10,sticky="W")# sticky preenche as laterais NSEW( Norte, Sul, Leste e Oeste)
+    global produtos_empresa_cadastrar
     produtos_empresa_cadastrar = Entry(janela_cadastrar_fornecedor, font=("Arial, 12"), **estilo_borda)
     produtos_empresa_cadastrar.grid(row=3,column=1,padx=10,pady=10)
 
@@ -117,7 +173,7 @@ def cadastrarFornecedor():
         cursor.execute("INSERT INTO fornecedores(NomeEmpresa,Cnpj,Contatos,Produtos)Values(?,?,?,?)", novo_fornecedor_cadastrar)
         connector.commit()
 
-        print("Fornecedor cadastrado com sucesso !!!")
+        messagebox.showinfo("Sucesso", "Fornecedor cadastrado com sucesso !!!")
         
         #Fecha a janela de cadastro depois de finalizado.
         janela_cadastrar_fornecedor.destroy()
